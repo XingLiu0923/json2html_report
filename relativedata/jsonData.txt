@@ -1,0 +1,15 @@
+{
+	"list": ["string1", "string2", "string3", "string4", "string5"],
+	"map": {
+		"key1": "value1",
+		"key2": "value2",
+		"key3": "value3",
+		"key4": "value4",
+		"key5": "value5"
+	},
+	"name": "   htTps://wWw.zHyD.mE   ",
+	"htmlText": "<span>html内容</span>",
+	"num": 123.012,
+	"null": null,
+	"bol": true
+}
