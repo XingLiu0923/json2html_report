@@ -2,14 +2,11 @@ package com.json2html.demo.controller;
 
 import com.aisp.horizontal.helper.JsonHelper;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.json2html.demo.dataobject.Jsondata;
-import com.json2html.demo.dataobject.Template;
 import com.json2html.demo.enums.ResultEnum;
 import com.json2html.demo.enums.TemplateStatusEnum;
 import com.json2html.demo.exception.Json2HtmlException;
 import com.json2html.demo.holder.SpringContextHolder;
-import com.json2html.demo.service.JsondataService;
-import com.json2html.demo.service.TemplateService;
+import com.json2html.demo.service.MongoService;
 import com.json2html.demo.util.FileConvertUtil;
 import com.json2html.demo.util.ResultConfigUtil;
 import com.json2html.demo.util.ResultVOUtil;
@@ -18,6 +15,7 @@ import freemarker.cache.StringTemplateLoader;
 import freemarker.template.Configuration;
 import freemarker.template.TemplateException;
 import lombok.extern.slf4j.Slf4j;
+import org.bson.Document;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.freemarker.FreeMarkerTemplateUtils;
@@ -33,10 +31,7 @@ import java.util.UUID;
 public class FreemarkerController {
 
     @Autowired
-    JsondataService jsondataService;
-
-    @Autowired
-    TemplateService templateService;
+    MongoService mongoService;
 
     /* 上传模版文件来获取页面 */
     @RequestMapping("upload")
@@ -52,11 +47,11 @@ public class FreemarkerController {
         String templateId = UUID.randomUUID().toString().replaceAll("-", "");
 
         // 生成模版信息，上传到数据库；
-        Template template = new Template();
-        template.setTemplateContent(templateContent);
-        template.setTemplateId(templateId);
-        template.setTemplateStatus(TemplateStatusEnum.UP.getCode());
-        templateService.save(template);
+        Document template = new Document();
+        template.put("templateContent", templateContent);
+        template.put("templateId", templateId);
+        template.put("templateStatus", TemplateStatusEnum.UP.getCode());
+        mongoService.save("template", template);
         log.info("上传模版成功");
 
         return ResultVOUtil.success(ResultConfigUtil.templateIdResult(templateId));
@@ -75,18 +70,12 @@ public class FreemarkerController {
         String jsondataId = UUID.randomUUID().toString().replaceAll("-", "");
 
         // 将jsondata存储到数据库
-        Jsondata jsondata = new Jsondata();
-        jsondata.setDataId(jsondataId);
-        jsondata.setDataContent(jsonDataContent);
-        jsondata.setTemplateId(templateId);
-        jsondataService.save(jsondata);
+        Document jsondata = new Document();
+        jsondata.put("dataId", jsondataId);
+        jsondata.put("dataContent", jsonDataContent);
+        jsondata.put("templateId", templateId);
+        mongoService.save("jsondata", jsondata);
         log.info("jsondata存储成功");
-
-/*        // 验证数据库中是否有响应的模版，生成链接
-        Template templatefile = templateService.findOneByTemplateId(templateId);
-        if (templatefile == null) {
-            throw new Json2HtmlException(ResultEnum.TEMPLATE_NOT_EXIST);
-        }*/
 
         // 拼接出一个请求链接即可。。
         String url = "http://localhost:8080/" + "report" + "/" + jsondataId;
@@ -100,17 +89,17 @@ public class FreemarkerController {
     @ResponseBody
     public String report(@PathVariable("jsondataid") String jsondataId) {
         // 通过jsondataId找到对应的jsondata
-        Jsondata jsondata = jsondataService.findOneByDataId(jsondataId);
+        // Jsondata jsondata = jsondataService.findOneByDataId(jsondataId);
+        Document jsondata = mongoService.findJsBydataId(jsondataId);
         if (jsondata == null) {
             throw new Json2HtmlException(ResultEnum.JSONDATA_NOT_EXIST);
         }
-
         // 通过jsondataid找到templateid
-        String templateId = jsondata.getTemplateId();
+        String templateId = jsondata.getString("templateId");
 
         // 分别从数据库中读取模版字符串和数据字符串
-        String templateContent = templateService.findOneByTemplateId(templateId).getTemplateContent();
-        String jsondataContent = jsondata.getDataContent();
+        String templateContent = mongoService.findTemplateByTemplateId(templateId).getString("templateContent");
+        String jsondataContent = jsondata.getString("dataContent");
         if (templateContent == null || jsondataContent == null) {
             throw new Json2HtmlException(ResultEnum.REPORTDATA_DOWNLOAD_ERROR);
         }
@@ -123,7 +112,6 @@ public class FreemarkerController {
         log.info("报告模版设置成功");
 
         // json字符串到map
-        // LinkedHashMap map = Json2javaUtil.convert(jsondata);
         LinkedHashMap map = JsonHelper.parse(jsondataContent, new TypeReference<LinkedHashMap>() {});
         log.info("报告json设置成功");
 

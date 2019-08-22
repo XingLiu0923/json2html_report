@@ -66,16 +66,15 @@
             <optional>true</optional>
         </dependency>
 
-
-        <dependency>
+<!--        <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
-        </dependency>
+        </dependency>-->
 
-        <dependency>
+        <!--<dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
-        </dependency>
+        </dependency>-->
 
         <dependency>
             <groupId>com.aisp</groupId>
@@ -83,6 +82,18 @@
             <version>1.14.119.0</version>
         </dependency>
 
+        <!--<dependency>
+                    <groupId>org.mongodb</groupId>
+                    <artifactId>mongodb-driver-core</artifactId>
+                    <version>3.8.2</version>
+                </dependency>-->
+
+
+        <dependency>
+            <groupId>org.mongodb</groupId>
+            <artifactId>mongo-java-driver</artifactId>
+            <version>3.6.4</version>
+        </dependency>
     </dependencies>
 
     <build>
